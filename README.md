@@ -91,6 +91,60 @@ pip3 install pyinstaller
 pyinstaller invoice_tool.spec --clean
 ```
 
+### 本地调试打包
+
+如果打包过程中遇到问题，可以使用以下方法调试：
+
+**1. 直接运行Python脚本（不打包）**
+```bash
+# 测试基本功能
+python3 invoice_tool.py /path/to/invoices -o /path/to/output
+
+# 查看详细输出
+python3 invoice_tool.py /path/to/invoices -v
+```
+
+**2. 使用调试脚本检查PDF提取**
+```bash
+# 运行调试脚本查看提取过程
+python3 debug_chars2.py
+
+# 检查特定文件
+python3 -c "
+from invoice_tool import InvoiceTool
+tool = InvoiceTool()
+ref = tool.extract_order_reference('path/to/invoice.pdf')
+print(f'Extracted: {repr(ref)}')
+"
+```
+
+**3. PyInstaller单文件模式调试**
+```bash
+# 打包为单文件（方便测试）
+pyinstaller --onefile --console invoice_tool.py
+
+# 运行并查看错误输出
+./dist/invoice_tool /path/to/invoices
+```
+
+**4. 常见问题排查**
+
+| 问题 | 解决方法 |
+|------|---------|
+| 打包后运行无反应 | 使用 `--console` 参数重新打包，查看错误输出 |
+| 缺少依赖 | 确保 `requirements.txt` 中所有包都已安装 |
+| 文件找不到 | 检查 `invoice_tool.spec` 中的 `pathex` 配置 |
+| 权限不足（Mac） | 运行 `chmod +x dist/invoice-tool/invoice-tool` |
+
+**5. 清理缓存重新打包**
+```bash
+# 删除构建缓存
+rm -rf build/ dist/ __pycache__/
+
+# 重新打包
+pyinstaller invoice_tool.spec --clean
+```
+
 ## 技术栈
 
 - Python 3.8+

@@ -53,6 +53,14 @@ class InvoiceTool:
             if value is not None:
                 self.config[key] = value
 
+    def clean_filename(self, text):
+        """清理文件名，移除非法字符，保留连字符"""
+        if not text:
+            return ""
+        # 移除所有非字母数字和连字符的字符（包括换行符、空格等）
+        cleaned = re.sub(r'[^A-Za-z0-9\-]', '', text)
+        return cleaned
+
     def extract_order_reference(self, pdf_path):
         """从PDF中提取Order Reference"""
         try:
@@ -76,6 +84,9 @@ class InvoiceTool:
                 suffix = self.config.get("remove_suffix")
                 if suffix:
                     ref = re.sub(f'{suffix}$', '', ref, flags=re.IGNORECASE)
+                
+                # 清理文件名中的特殊字符（换行符等）
+                ref = self.clean_filename(ref)
                 
                 return ref
             
