@@ -20,7 +20,7 @@ jobs:
             archive_name: invoice-tool-windows.zip
           - os: macos-latest
             artifact_name: invoice-tool-mac
-            archive_name: invoice-tool-mac.tar.gz
+            archive_name: InvoiceTool-mac.zip
           - os: ubuntu-latest
             artifact_name: invoice-tool-linux
             archive_name: invoice-tool-linux.tar.gz
@@ -48,14 +48,31 @@ jobs:
         run: |
           pyinstaller invoice_tool_gui.spec --clean --noconfirm
 
+      # macOS: 对 .app 进行临时签名，解决"已损坏"问题
+      - name: Sign macOS app (ad-hoc)
+        if: matrix.os == 'macos-latest'
+        run: |
+          # 移除隔离属性并重新签名
+          xattr -cr dist/InvoiceTool.app || true
+          codesign --force --deep --sign - dist/InvoiceTool.app
+          # 验证签名
+          codesign -dv dist/InvoiceTool.app
+
       - name: Create archive (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           cd dist
-          Compress-Archive -Path invoice-tool -DestinationPath ${{ matrix.archive_name }}
+          Compress-Archive -Path InvoiceTool.exe -DestinationPath ${{ matrix.archive_name }}
 
-      - name: Create archive (Mac/Linux)
-        if: matrix.os != 'windows-latest'
+      # macOS: 直接压缩 .app bundle
+      - name: Create archive (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          cd dist
+          zip -r ${{ matrix.archive_name }} InvoiceTool.app
+
+      - name: Create archive (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           cd dist
           tar -czvf ${{ matrix.archive_name }} invoice-tool
