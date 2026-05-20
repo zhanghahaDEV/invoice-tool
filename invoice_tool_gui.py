@@ -34,7 +34,7 @@ class Api:
         return {"success": False, "path": ""}
 
     def preview(self, input_dir):
-        """预览：扫描目录中的PDF文件"""
+        """预览：扫描全部PDF文件，返回汇总数据"""
         input_path = Path(input_dir)
         if not input_path.exists():
             return {"success": False, "error": "目录不存在"}
@@ -43,19 +43,26 @@ class Api:
         if not pdf_files:
             return {"success": False, "error": "未找到PDF文件"}
 
-        previews = []
-        for pdf_file in pdf_files[:5]:
+        # 扫描全部文件
+        valid_count = 0
+        refs = {}
+        for pdf_file in pdf_files:
             ref = self.tool.extract_order_reference(str(pdf_file))
-            previews.append({
-                "filename": pdf_file.name,
-                "reference": ref,
-                "valid": self.tool.validate_reference(ref)
-            })
+            if ref and self.tool.validate_reference(ref):
+                valid_count += 1
+                refs[ref] = refs.get(ref, 0) + 1
+
+        unique_count = len(refs)
+        dup_count = sum(1 for v in refs.values() if v > 1)
+        unrecognizable = len(pdf_files) - valid_count
 
         return {
             "success": True,
             "total_files": len(pdf_files),
-            "previews": previews
+            "valid_count": valid_count,
+            "unique_count": unique_count,
+            "dup_count": dup_count,
+            "unrecognizable": unrecognizable
         }
 
     def process(self, input_dir, output_dir=""):
