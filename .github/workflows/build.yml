@@ -1,0 +1,64 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: invoice-tool-windows
+            exe_name: invoice-tool.exe
+          - os: macos-latest
+            artifact_name: invoice-tool-mac
+            exe_name: invoice-tool
+          - os: ubuntu-latest
+            artifact_name: invoice-tool-linux
+            exe_name: invoice-tool
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller invoice_tool.spec --clean --noconfirm
+
+      - name: Rename executable
+        shell: bash
+        run: |
+          cd dist/invoice-tool
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            mv invoice-tool.exe ${{ matrix.exe_name }}.exe 2>/dev/null || true
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            dist/invoice-tool/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/invoice-tool/
