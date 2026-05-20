@@ -17,13 +17,13 @@ jobs:
         include:
           - os: windows-latest
             artifact_name: invoice-tool-windows
-            exe_name: invoice-tool.exe
+            archive_name: invoice-tool-windows.zip
           - os: macos-latest
             artifact_name: invoice-tool-mac
-            exe_name: invoice-tool
+            archive_name: invoice-tool-mac.tar.gz
           - os: ubuntu-latest
             artifact_name: invoice-tool-linux
-            exe_name: invoice-tool
+            archive_name: invoice-tool-linux.tar.gz
 
     steps:
       - name: Checkout
@@ -43,20 +43,23 @@ jobs:
         run: |
           pyinstaller invoice_tool.spec --clean --noconfirm
 
-      - name: Rename executable
-        shell: bash
+      - name: Create archive (Windows)
+        if: matrix.os == 'windows-latest'
         run: |
-          cd dist/invoice-tool
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            mv invoice-tool.exe ${{ matrix.exe_name }}.exe 2>/dev/null || true
-          fi
+          cd dist
+          Compress-Archive -Path invoice-tool -DestinationPath ${{ matrix.archive_name }}
+
+      - name: Create archive (Mac/Linux)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cd dist
+          tar -czvf ${{ matrix.archive_name }} invoice-tool
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            dist/invoice-tool/**/*
+          files: dist/${{ matrix.archive_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -64,4 +67,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist/invoice-tool/
+          path: dist/${{ matrix.archive_name }}
