@@ -1,8 +1,0 @@
-{
-    "pattern": "Order Reference:([^:;]+)[:;]",
-    "remove_suffix": "TOTAL",
-    "min_length": 6,
-    "max_length": 20,
-    "require_letter": true,
-    "require_digit": true
-}
