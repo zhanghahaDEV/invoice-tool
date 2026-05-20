@@ -1,7 +1,7 @@
 # Build artifacts
 build/
 dist/
-*.spec
+# *.spec  # Keep spec files for CI/CD builds
 
 # Python
 __pycache__/
